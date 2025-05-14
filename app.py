@@ -2,10 +2,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Permite chamadas do app Flutter
+CORS(app)
 
-# Simula um banco de dados simples com e-mails cadastrados
-usuarios = set()
+# Simula um "banco de dados" com e-mail e senha
+usuarios = {}
 
 @app.route("/")
 def home():
@@ -14,23 +14,30 @@ def home():
 @app.route("/register", methods=["POST"])
 def register():
     email = request.form.get("email")
-    if not email:
-        return jsonify({"error": "E-mail é obrigatório"}), 400
+    senha = request.form.get("password")
+
+    if not email or not senha:
+        return jsonify({"error": "E-mail e senha são obrigatórios"}), 400
 
     if email in usuarios:
         return jsonify({"message": "E-mail já cadastrado"}), 200
 
-    usuarios.add(email)
+    usuarios[email] = senha
     return jsonify({"message": "Usuário cadastrado com sucesso!"}), 200
 
 @app.route("/login", methods=["POST"])
 def login():
     email = request.form.get("email")
-    if not email:
-        return jsonify({"error": "E-mail é obrigatório"}), 400
+    senha = request.form.get("password")
+
+    if not email or not senha:
+        return jsonify({"error": "E-mail e senha são obrigatórios"}), 400
 
     if email not in usuarios:
-        return jsonify({"error": "E-mail não encontrado"}), 401
+        return jsonify({"error": "E-mail não cadastrado"}), 401
+
+    if usuarios[email] != senha:
+        return jsonify({"error": "Senha incorreta"}), 403
 
     return jsonify({"message": "Login bem-sucedido!"}), 200
 
