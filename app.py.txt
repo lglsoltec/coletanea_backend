@@ -1,0 +1,52 @@
+from flask import Flask, request, jsonify
+import json
+import os
+
+app = Flask(__name__)
+USERS_FILE = 'users.json'
+
+if not os.path.exists(USERS_FILE):
+    with open(USERS_FILE, 'w') as f:
+        json.dump({}, f)
+
+def load_users():
+    with open(USERS_FILE, 'r') as f:
+        return json.load(f)
+
+def save_users(users):
+    with open(USERS_FILE, 'w') as f:
+        json.dump(users, f, indent=2)
+
+@app.route("/registrar", methods=["POST"])
+def registrar():
+    data = request.get_json()
+    email = data.get("email")
+    senha = data.get("senha")
+    if not email or not senha:
+        return jsonify({"erro": "Email e senha são obrigatórios."}), 400
+
+    users = load_users()
+    if email in users:
+        return jsonify({"erro": "Usuário já existe."}), 409
+
+    users[email] = {"senha": senha}
+    save_users(users)
+    return jsonify({"mensagem": "Usuário registrado com sucesso!"})
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    senha = data.get("senha")
+
+    users = load_users()
+    if email in users and users[email]["senha"] == senha:
+        return jsonify({"mensagem": "Login bem-sucedido!"})
+    return jsonify({"erro": "Email ou senha inválidos."}), 401
+
+@app.route("/")
+def home():
+    return "Backend Coletânea Digital rodando!"
+
+if __name__ == "__main__":
+    app.run(debug=True)
